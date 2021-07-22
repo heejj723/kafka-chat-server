@@ -21,13 +21,21 @@ import org.springframework.web.socket.WebSocketSession;
 public class ChatRoomReq {
   private String roomId;
   private String roomName;
-  private final Set<WebSocketSession> sessions = new HashSet<>();
 
-  public void handleActions(WebSocketSession session, ChatMessage chatMessage, ChatService chatService) {
+  @Builder.Default
+  private Set<WebSocketSession> sessions = new HashSet<>();
+
+  public void handleActions(WebSocketSession session, ChatMessage chatMessage, ChatService chatService)
+    throws IllegalAccessException {
     if (chatMessage.getMessageType().equals(MessageType.ENTER)) {
       sessions.add(session);
       chatMessage.setMessage("'" + chatMessage.getSender() + "' 님이 입장하셨습니다.");
-    } else {
+    }
+
+    else{
+       if (!sessions.contains(session)) {
+         throw new IllegalAccessException("'" + chatMessage.getSender() + "' 는 이 방에 속해 있지 않습니다.");
+       }
       chatMessage.setMessage("[" + chatMessage.getSender() + "]: " + chatMessage.getMessage());
     }
 
