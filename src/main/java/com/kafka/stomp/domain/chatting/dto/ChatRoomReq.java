@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.WebSocketSession;
 
 @Getter
@@ -16,10 +17,11 @@ import org.springframework.web.socket.WebSocketSession;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Slf4j
 public class ChatRoomReq {
   private String roomId;
   private String roomName;
-  private Set<WebSocketSession> sessions;
+  private final Set<WebSocketSession> sessions = new HashSet<>();
 
   public void handleActions(WebSocketSession session, ChatMessage chatMessage, ChatService chatService) {
     if (chatMessage.getMessageType().equals(MessageType.ENTER)) {
@@ -33,6 +35,14 @@ public class ChatRoomReq {
   }
 
   private void sendMessage(ChatMessage chatMessage, ChatService chatService) {
-    sessions.parallelStream().forEach(session -> chatService.sendMessage(session, chatMessage));
+    sessions.parallelStream().forEach(session -> {
+        chatService.sendMessage(session, chatMessage);
+      }
+    );
   }
+
+  public void handleClosedSession(WebSocketSession closedSession) {
+    sessions.remove(closedSession);
+  }
+
 }

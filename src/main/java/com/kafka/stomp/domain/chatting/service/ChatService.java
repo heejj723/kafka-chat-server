@@ -7,8 +7,10 @@ import com.sun.tools.javac.util.List;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,8 @@ import org.springframework.web.socket.WebSocketSession;
 public class ChatService {
 
   private final ObjectMapper objectMapper;
+
+  private Set<WebSocketSession> allSessions = new HashSet<>();
   private Map<String, ChatRoomReq> chatRooms;
 
   @PostConstruct
@@ -39,7 +43,6 @@ public class ChatService {
     ChatRoomReq chatRoomReq = ChatRoomReq.builder()
       .roomId(randomId)
       .roomName(roomName)
-      .sessions(new HashSet<>())
       .build();
     chatRooms.put(randomId, chatRoomReq);
     return chatRoomReq;
@@ -50,6 +53,18 @@ public class ChatService {
       session.sendMessage(new TextMessage(objectMapper.writeValueAsString(message)));
     } catch (IOException e) {
       log.error(e.getMessage(), e);
+    }
+  }
+
+  public void addSession(WebSocketSession session) {
+    allSessions.add(session);
+  }
+
+  public void removeSession(WebSocketSession session) {
+    allSessions.remove(session);
+
+    for (String key : chatRooms.keySet()) {
+      chatRooms.get(key).handleClosedSession(session);
     }
   }
 

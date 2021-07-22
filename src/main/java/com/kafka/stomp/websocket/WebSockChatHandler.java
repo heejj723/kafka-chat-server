@@ -7,6 +7,7 @@ import com.kafka.stomp.domain.chatting.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -25,6 +26,14 @@ public class WebSockChatHandler extends TextWebSocketHandler {
 
     ChatMessage chatMessage = objectMapper.readValue(payload, ChatMessage.class);
     ChatRoomReq chatRoom = chatService.findRoomById(chatMessage.getRoomId());
+
+//    log.info("chatMessage: {}, chatRoom: {}", chatMessage.getMessage(), chatRoom.getRoomName());
+
     chatRoom.handleActions(session, chatMessage, chatService);
+  }
+
+  @Override
+  public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    chatService.removeSession(session);
   }
 }
